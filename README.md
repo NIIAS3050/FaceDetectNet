@@ -1,5 +1,5 @@
 # FaceDetectNet
-Face Detection using detect-net
+Face Detection using DetectNet
 
-# \fast
-Squeeze net based model.
+./models
+
