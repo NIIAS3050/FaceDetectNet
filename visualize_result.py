@@ -114,13 +114,13 @@ def process_boxes(net_cvg, net_boxes, im_sz_x, im_sz_y, stride, thr, itCNT = 3, 
 									Cnts[x][y] += cvgref[x_i][y_i]
 									Cnts2[x][y] +=1.0
 
-	for x in range(0, grid_sz_x):
-		for y in range(0, grid_sz_y):
-			x1ref[x][y] = x1s[x][y]/Cnts[x][y]
-			y1ref[x][y] = y1s[x][y]/Cnts[x][y]
-			x2ref[x][y] = x2s[x][y]/Cnts[x][y]
-			y2ref[x][y] = y2s[x][y]/Cnts[x][y]
-			cvgref[x][y] = Cnts[x][y]/Cnts2[x][y]
+		for x in range(0, grid_sz_x):
+			for y in range(0, grid_sz_y):
+				x1ref[x][y] = x1s[x][y]/Cnts[x][y]
+				y1ref[x][y] = y1s[x][y]/Cnts[x][y]
+				x2ref[x][y] = x2s[x][y]/Cnts[x][y]
+				y2ref[x][y] = y2s[x][y]/Cnts[x][y]
+				cvgref[x][y] = Cnts[x][y]/Cnts2[x][y]
 
 	coord = np.where(cvgref > thr)
 
@@ -176,10 +176,10 @@ def union_rects(rects):
 
         		else: pass 
     		if len(tmp_lst) > 1:
-        		avrg_x1 = 0
-        		avrg_y1 = 0
-        		avrg_x2 = 0
-        		avrg_y2 = 0
+        		avrg_x1 = []
+        		avrg_y1 = []
+        		avrg_x2 = []
+        		avrg_y2 = []
         		avrg_cvg = 0
         		tmp_lst_clean = []
 
@@ -189,15 +189,14 @@ def union_rects(rects):
             			else:
                 			pass
         		for tlc in tmp_lst_clean:
-            			avrg_x1 = avrg_x1 + tlc[0]
-            			avrg_y1 = avrg_y1 + tlc[1]
-            			avrg_x2 = avrg_x2 + tlc[2]
-            			avrg_y2 = avrg_y2 + tlc[3]
+            			avrg_x1.append(tlc[0])
+            			avrg_y1.append(tlc[1])
+            			avrg_x2.append(tlc[2])
+            			avrg_y2.append(tlc[3])
 
             			avrg_cvg = avrg_cvg + tlc[4]
 
-        		cov_iou.append([avrg_x1/len(tmp_lst_clean), avrg_y1/len(tmp_lst_clean), avrg_x2/len(tmp_lst_clean), avrg_y2/len(tmp_lst_clean), 
-			avrg_cvg, len(tmp_lst_clean)])
+        		cov_iou.append([min(avrg_x1), min(avrg_y1), max(avrg_x2), max(avrg_y2), avrg_cvg, len(tmp_lst_clean)])
 	return cov_iou
 
 def main(argv):
