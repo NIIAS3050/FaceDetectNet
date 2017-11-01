@@ -133,21 +133,33 @@ def process_boxes(net_cvg, net_boxes, im_sz_x, im_sz_y, stride, thr, itCNT = 3, 
 
 	return boxes
 
-def neighbours(b, M1, M2):
-    lst = []
-    try:
-      for b_j_2 in range(M1.shape[1]):
-          if M1[b][b_j_2] == 1:
-            lst.append(M2[b_j_2])
-            M1[b][b_j_2] = 0
-            M1[b_j_2][b] = 0
-            neighbour_ = neighbours(b_j_2, M1, M2)
-            for nb in neighbour_:
-                lst.append(nb)
-
-    except RuntimeError: 
-	return lst
-    return lst
+def neighbours(neighb):
+	def findRoot(node, root):
+		while node != root[node][0]:
+			node = root[node][0]
+		return (node, root[node][1])
+	root_dict = {} 
+	for nd in neighb.keys():
+		root_dict[nd] = (nd, 0)  
+	for i in neighb: 
+		for j in neighb[i]: 
+			(root_i, depth_i) = findRoot(i, root_dict) 
+			(root_j, depth_j) = findRoot(j, root_dict) 
+			if root_i != root_j: 
+				min_ = root_i
+				max_ = root_j 
+				if  depth_i > depth_j: 
+					min_ = root_j
+					max_ = root_i
+				root_dict[max_] = (max_, max(root_dict[min_][1] + 1, root_dict[max_][1]))
+				root_dict[min_] = (root_dict[max_][0], -1) 
+	dict_result = {}
+	for i in neighb: 
+		if root_dict[i][0] == i:
+			dict_result[i] = []
+	for i in neighb: 
+		dict_result[findRoot(i, root_dict)[0]].append(i) 
+	return dict_result
 
 def union_rects(rects):
 	B = np.zeros([len(rects),len(rects)])
@@ -162,21 +174,33 @@ def union_rects(rects):
         		j = j+1
     		i = i + 1
 
-	cov_iou = []
-	for b_i in range(B.shape[0]):
-    		tmp_lst = [rects[b_i]]
-    		for b_j in range(B.shape[1]):
-        		if B[b_i][b_j] == 1:
-	       			tmp_lst.append(rects[b_j])
-            			B[b_i][b_j] = 0
-           			B[b_j][b_i] = 0
-            			neighbour = neighbours(b_j, B, rects)
-            			for n in neighbour:
-                			tmp_lst.append(n)
 
-        		else: pass 
+
+	###############
+	dict_ind = {}
+	#
+	for b_i in range(B.shape[0]):
+		lst_index = []
+		for b_j in range(B.shape[1]):
+			if B[b_i][b_j] == 1:
+				lst_index.append(b_j)
+				B[b_i][b_j] = 0
+           			B[b_j][b_i] = 0
+		dict_ind.update({b_i: lst_index})
+
+	cov_iou = []
+	
+	f_rect = neighbours(dict_ind)
+	for l in f_rect.keys(): 
+		tmp_lst = []
+		for iii in dict_ind.get(l): 
+			
+			tmp_lst.append(rects[iii])
+	
+		
+	##############
     		if len(tmp_lst) > 1:
-        		avrg_x1 = []
+			avrg_x1 = []
         		avrg_y1 = []
         		avrg_x2 = []
         		avrg_y2 = []
@@ -189,14 +213,14 @@ def union_rects(rects):
             			else:
                 			pass
         		for tlc in tmp_lst_clean:
-            			avrg_x1.append(tlc[0])
+				avrg_x1.append(tlc[0])
             			avrg_y1.append(tlc[1])
             			avrg_x2.append(tlc[2])
             			avrg_y2.append(tlc[3])
 
             			avrg_cvg = avrg_cvg + tlc[4]
 
-        		cov_iou.append([min(avrg_x1), min(avrg_y1), max(avrg_x2), max(avrg_y2), avrg_cvg, len(tmp_lst_clean)])
+			cov_iou.append([min(avrg_x1), min(avrg_y1), max(avrg_x2), max(avrg_y2), avrg_cvg, len(tmp_lst_clean)])
 	return cov_iou
 
 def main(argv):
