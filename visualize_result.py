@@ -11,8 +11,6 @@ import sys
 sys.path.insert(0, caffe)
 import caffe
 
-sys.setrecursionlimit(20000)
-
 from skimage import io, img_as_float, transform
 
 import PIL
